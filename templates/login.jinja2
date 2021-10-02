@@ -1,0 +1,28 @@
+{% include 'header.jinja2' %}
+{% if email %}
+    <script>
+        window.location.replace("/");
+    </script>
+{% else %}
+    <div>
+        <p style="text-align: center; color: #666666">Unregistered user will be registered</p>
+    </div>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon3">E-mail</span>
+        </div>
+        <input type="text" class="form-control" placeholder="Input your email" aria-label="email" v-model="email">
+    </div>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon3">Password</span>
+        </div>
+        <input type="password" class="form-control" placeholder="Input your password" aria-label="password"
+               v-model="password" @keyup.enter="clickLogin()">
+    </div>
+    <div>
+        <button class=" btn btn-primary center" style="text-align: center" @click="clickLogin()">login</button>
+    </div>
+{% endif %}
+<script src="{{ url_for('static', filename='javascript/login.js') }}"></script>
+{% include 'footer.jinja2' %}

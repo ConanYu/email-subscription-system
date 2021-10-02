@@ -1,0 +1,81 @@
+{% include 'header.jinja2' %}
+</div>
+
+<style>
+    .table-admin * {
+        font-weight: normal;
+    }
+
+    .border-none {
+        border: 0;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+    }
+
+    .border-none:focus {
+        border-color: #fff;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+    }
+</style>
+
+<div id="admin">
+    <div class="container">
+        <div class="table-responsive table-striped">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>E-mail</th>
+                    <th>Password</th>
+                    <th>SMTP Server</th>
+                    <th>SMTP Port</th>
+                    <th>Operator</th>
+                </tr>
+                </thead>
+                <tbody class="table-admin">
+                {% for s in sender %}
+                    <tr>
+                        <th>{{ s.email }}</th>
+                        <th>{{ s.pwd }}</th>
+                        <th>{{ s.smtp_server }}</th>
+                        <th>{{ s.smtp_port }}</th>
+                        <th>
+                            <button class="btn btn-sm btn-primary" @click="deleteSender('{{ s.email }}')">Delete</button>
+                        </th>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <th>
+                        <label>
+                            <input type="text" placeholder="E-mail" class="form-control border-none" v-model="email">
+                        </label>
+                    </th>
+                    <th>
+                        <label>
+                            <input type="text" placeholder="Password" class="form-control border-none" v-model="password">
+                        </label>
+                    </th>
+                    <th>
+                        <label>
+                            <input type="text" placeholder="SMTP Server" class="form-control border-none" v-model="smtp_server">
+                        </label>
+                    </th>
+                    <th>
+                        <label>
+                            <input type="text" placeholder="SMTP Port" class="form-control border-none" v-model="smtp_port">
+                        </label>
+                    </th>
+                    <th>
+                        <button class="btn btn-sm btn-primary" @click="addSender()">Add</button>
+                    </th>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='javascript/admin.js') }}"></script>
+
+<div>
+{% include 'footer.jinja2' %}

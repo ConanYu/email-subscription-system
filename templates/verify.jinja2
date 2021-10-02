@@ -1,0 +1,13 @@
+{% include 'header.jinja2' %}
+
+{% if ok %}
+    <div>
+        <p>Verify OK</p>
+    </div>
+{% else %}
+    <div>
+        <p>Verify failed. Please try again.</p>
+    </div>
+{% endif %}
+
+{% include 'footer.jinja2' %}

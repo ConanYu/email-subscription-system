@@ -1,0 +1,20 @@
+server:
+  host: ~
+  port: ~
+  debug: true
+
+app:
+  register:
+    cache:
+      size: ~
+      ttl: ~
+
+  cookie:
+    expire: ~
+
+project:
+  name: GoodGuy
+
+admin:
+  email: ~
+  password: ~

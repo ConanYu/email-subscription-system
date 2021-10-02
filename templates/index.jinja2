@@ -1,0 +1,19 @@
+{% include 'header.jinja2' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mui-switch.css') }}">
+{% if email %}
+    <div class="center">
+    <p style="font-size: large">{{ email }}</p>
+    </div>
+    <div class="center">
+        <label style="font-size: large">
+            <input class="mui-switch" type="checkbox" {{ checked }} @change="change()">
+            &nbsp;Subscribe
+        </label>
+    </div>
+    <script src="{{ url_for('static', filename='javascript/index.js') }}"></script>
+{% else %}
+    <script>
+        window.location.replace("/login");
+    </script>
+{% endif %}
+{% include 'footer.jinja2' %}
