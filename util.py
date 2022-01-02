@@ -1,6 +1,7 @@
+import hashlib
 import smtplib
 from email.mime.text import MIMEText
-from typing import List
+from typing import List, Union
 
 from db import Sender
 
@@ -16,3 +17,11 @@ def send_email(sender: Sender, to_addr: List[str], mail: MIMEText):
     server.login(from_addr, password)
     server.sendmail(from_addr, to_addr, mail.as_string())
     server.quit()
+
+
+def md5(v: Union[str, int]) -> str:
+    if isinstance(v, int):
+        v = str(v)
+    o = hashlib.md5()
+    o.update(v.encode('utf-8'))
+    return o.hexdigest()

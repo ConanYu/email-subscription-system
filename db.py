@@ -5,6 +5,7 @@ from typing import List
 
 from sqlalchemy import String, Column, create_engine, Integer
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy.pool import SingletonThreadPool
 
 from const import ROOT
 
@@ -27,7 +28,7 @@ class Sender(_ORM_BASE):
 
 
 _DB_PATH = os.path.join(ROOT, 'E-mail Subscriptions System.sqlite3')
-_ENGINE = create_engine(f'sqlite:///{_DB_PATH}')
+_ENGINE = create_engine(f'sqlite:///{_DB_PATH}', poolclass=SingletonThreadPool, connect_args={'check_same_thread': False})
 _SESSION_CLZ = sessionmaker(bind=_ENGINE)
 
 # create table if not exist

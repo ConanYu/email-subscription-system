@@ -2,13 +2,17 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/mui-switch.css') }}">
 {% if email %}
     <div class="center">
-    <p style="font-size: large">{{ email }}</p>
+        <p style="font-size: large">{{ email }}</p>
     </div>
     <div class="center">
         <label style="font-size: large">
             <input class="mui-switch" type="checkbox" {{ checked }} @change="change()">
             &nbsp;Subscribe
         </label>
+        <a href="/logout" class="center">logout</a>
+        {% if admin %}
+            <a href="/admin" class="center">admin page</a>
+        {% endif %}
     </div>
     <script src="{{ url_for('static', filename='javascript/index.js') }}"></script>
 {% else %}

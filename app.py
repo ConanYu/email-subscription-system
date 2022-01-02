@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import json
 import logging
@@ -6,7 +7,7 @@ import socket
 import time
 from email.mime.text import MIMEText
 import random
-from typing import Dict
+from functools import lru_cache
 
 from cachetools import TTLCache
 from flask import Flask, render_template, request, abort, make_response, Response
@@ -16,7 +17,7 @@ from pydantic import BaseModel
 
 import db
 from config import GLOBAL_CONFIG
-from util import send_email
+from util import send_email, md5
 
 APP = Flask(__name__)
 LIMITER = Limiter(APP, key_func=get_remote_address)
@@ -27,7 +28,7 @@ class AppSession(BaseModel):
     timestamp: float
 
 
-APP_SESSION: Dict[str, AppSession] = dict()
+APP_SESSION = TTLCache(GLOBAL_CONFIG.get('app.cookie.size', 1000), GLOBAL_CONFIG.get('app.cookie.expire', 86400))
 COOKIE_KEY = 'EMAILSUBSCRIPTIONSYSTEMCLIENTID'
 REGISTER_CACHE = TTLCache(GLOBAL_CONFIG.get('app.register.cache.size', 1000),
                           GLOBAL_CONFIG.get('app.register.cache.ttl', 10 * 60))
@@ -57,19 +58,20 @@ def check_login() -> str:
         if s.timestamp + expire < now:
             APP_SESSION.pop(client_id)
             return ''
-        return s.email
+        return s.email.lower()
     return ''
 
 
 def pwd_hash(password: str) -> str:
-    return hashlib.sha1(password.encode('utf-8')).hexdigest()
+    return hashlib.sha1(f'Password: {password}, Project: EMAIL-SUBSCRIPTION-SYSTEM'.encode('utf-8')).hexdigest()
 
 
 def set_login_status(email: str) -> Response:
     client_id = hashlib.sha1(f'{random.random()}{time.time()}{email}'.encode('utf-8')).hexdigest()
     response = make_response('success')
-    response.set_cookie(COOKIE_KEY, client_id)
-    APP_SESSION[client_id] = AppSession(email=email, timestamp=time.time())
+    response.set_cookie(COOKIE_KEY, client_id, expires=datetime.datetime.now() + datetime.timedelta(
+        seconds=GLOBAL_CONFIG.get('app.cookie.expire', 86400)))
+    APP_SESSION.__setitem__(client_id, AppSession(email=email, timestamp=time.time()))
     return response
 
 
@@ -100,15 +102,21 @@ def verify():
 
 
 def api_register(email: str, password: str):
+    if REGISTER_CACHE.get(email) is not None:
+        abort(429, 'Too Many Requests')
     with db.session() as s:
+        n = s.query(db.Sender).count()
+        if n <= 0:
+            abort(500)
         rand = random.randrange(0, s.query(db.Sender).count())
         sender = s.query(db.Sender)[rand]
     name = GLOBAL_CONFIG.get('project.name', 'Project Name')
     host = GLOBAL_CONFIG.get('server.host', get_local_ip())
-    port = GLOBAL_CONFIG.get('server.port', 50052)
+    port = GLOBAL_CONFIG.get('server.port', 9853)
     key = hashlib.sha1(f'{email}{time.time()}{random.random()}'.encode('utf-8')).hexdigest()
     REGISTER_CACHE.__setitem__(key, db.User(email=email, pwd=pwd_hash(password)))
-    mail = MIMEText('\n'.join([
+    REGISTER_CACHE.__setitem__(email, '')
+    mail = MIMEText('\r\n'.join([
         f'Hi {email},',
         f'Thanks for registering {name}. Please verify your email address by clicking the URL below.',
         f'http://{host}:{port}/verify?key={key}'
@@ -120,14 +128,15 @@ def api_register(email: str, password: str):
 @APP.route('/api/login', methods=['POST'])
 @LIMITER.limit('25/day')
 def api_login():
-    email = request.json.get('email', '')
+    email = request.json.get('email', '').lower()
     password = request.json.get('password', '')
     if email == '' or password == '':
         abort(400, 'email or password is empty')
     if not re.search(r'(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)', email):
         abort(400, 'email is not a correct address')
-    if email == GLOBAL_CONFIG.get('admin.email'):
-        if password == GLOBAL_CONFIG.get('admin.password'):
+    if email == GLOBAL_CONFIG.get('admin.email').lower():
+        admin_pwd = md5(GLOBAL_CONFIG.get('admin.password'))
+        if password == admin_pwd:
             return set_login_status(email)
         abort(400)
     with db.session() as s:
@@ -140,9 +149,20 @@ def api_login():
     return Response('', status=202, mimetype='application/json')
 
 
+@lru_cache
+def init_admin():
+    admin_email = GLOBAL_CONFIG.get('admin.email').lower()
+    with db.session() as s:
+        user = s.query(db.User).filter(db.User.email == admin_email).first()
+        if not user:
+            s.add(db.User(email=admin_email, pwd=''))
+
+
 def admin_checker():
-    if check_login() != GLOBAL_CONFIG.get('admin.email'):
+    admin_email = GLOBAL_CONFIG.get('admin.email').lower()
+    if check_login() != admin_email:
         abort(400)
+    init_admin()
 
 
 @APP.route('/api/delete-sender', methods=['POST'])
@@ -171,6 +191,7 @@ def api_add_sender():
     return ''
 
 
+@APP.route('/admin', methods=['GET'])
 def admin():
     admin_checker()
     with db.session() as s:
@@ -186,18 +207,18 @@ def admin():
 def index():
     email = check_login()
     kwargs = {
-        "title": 'Email subscription system - index',
-        "email": email,
+        'title': 'Email subscription system - index',
+        'email': email,
+        'admin': False,
     }
     if email:
-        if email == GLOBAL_CONFIG.get('admin.email'):
-            return admin()
+        if email == GLOBAL_CONFIG.get('admin.email').lower():
+            admin_checker()
+            kwargs['admin'] = True
         with db.session() as s:
             user = s.query(db.User).filter(db.User.email == email).first()
             ss = user.subscribe
-        kwargs.update({
-            'checked': 'checked' if ss else '',
-        })
+        kwargs.update({'checked': 'checked' if ss else ''})
     return render_template('index.jinja2', **kwargs)
 
 
@@ -211,20 +232,31 @@ def login():
     return render_template('login.jinja2', **kwargs)
 
 
-@APP.route('/register')
+@APP.route('/register', methods=['GET'])
 def register():
     return render_template('register.jinja2', title='Email subscription system - register')
 
 
 @APP.route('/api/subscriber', methods=['GET'])
 def api_subscriber():
-    if check_login() == GLOBAL_CONFIG.get('admin.email'):
+    if check_login() == GLOBAL_CONFIG.get('admin.email').lower():
         return json.dumps(db.all_subscriber())
     abort(400)
 
 
+@APP.route('/logout', methods=['GET'])
+def logout():
+    resp = make_response('<script>window.location.replace("/");</script>')
+    resp.set_cookie(COOKIE_KEY, '', expires=0)
+    return resp
+
+
+def app():
+    host = GLOBAL_CONFIG.get('server.host', get_local_ip())
+    port = GLOBAL_CONFIG.get('server.port', 9853)
+    debug = GLOBAL_CONFIG.get('server.debug', False)
+    APP.run(host, port, debug)
+
+
 if __name__ == '__main__':
-    HOST = GLOBAL_CONFIG.get('server.host', get_local_ip())
-    PORT = GLOBAL_CONFIG.get('server.port', 50052)
-    DEBUG = GLOBAL_CONFIG.get('server.debug', False)
-    APP.run(HOST, PORT, DEBUG)
+    app()

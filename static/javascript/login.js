@@ -9,7 +9,7 @@ let app = new Vue({
 
 function clickLogin() {
     let email = app.$data.email;
-    let password = app.$data.password;
+    let password = md5(app.$data.password);
     axios.post('/api/login', {
         email: email,
         password: password,
