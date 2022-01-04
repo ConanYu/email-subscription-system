@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import smtplib
 from email.mime.text import MIMEText
 from typing import List, Union
@@ -7,6 +8,7 @@ from db import Sender
 
 
 def send_email(sender: Sender, to_addr: List[str], mail: MIMEText):
+    logging.info(sender.email, sender.pwd)
     from_addr = sender.email
     password = sender.pwd
     smtp_server = sender.smtp_server

@@ -115,14 +115,18 @@ def api_register(email: str, password: str):
     port = GLOBAL_CONFIG.get('verify.port', 9853)
     key = hashlib.sha1(f'{email}{time.time()}{random.random()}'.encode('utf-8')).hexdigest()
     REGISTER_CACHE.__setitem__(key, db.User(email=email, pwd=pwd_hash(password)))
-    REGISTER_CACHE.__setitem__(email, '')
     mail = MIMEText('\r\n'.join([
         f'Hi {email},',
         f'Thanks for registering {name}. Please verify your email address by clicking the URL below.',
         f'{host}:{port}/verify?key={key}'
     ]), 'plain', 'utf-8')
     mail['Subject'] = f'[{name}] Please confirm your email address'
-    send_email(sender, [email], mail)
+    try:
+        send_email(sender, [email], mail)
+    except Exception as e:
+        raise e
+    else:
+        REGISTER_CACHE.__setitem__(email, '')
 
 
 @APP.route('/api/login', methods=['POST'])
@@ -259,4 +263,5 @@ def app():
 
 
 if __name__ == '__main__':
+    logging.getLogger().setLevel(logging.INFO)
     app()
