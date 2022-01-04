@@ -24,7 +24,7 @@ class User(_ORM_BASE):
     __tablename__ = 'USER'
     email = Column(String(50), primary_key=True)
     pwd = Column(String(40))
-    subscribe = Column(Integer, default=0)
+    subscribe = Column(Integer, default=1)
 
 
 class Sender(_ORM_BASE):
