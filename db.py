@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from contextlib import contextmanager
@@ -10,6 +11,13 @@ from sqlalchemy.pool import SingletonThreadPool
 from const import ROOT
 
 _ORM_BASE = declarative_base()
+
+
+def _to_dict(self):
+    return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
+
+
+_ORM_BASE.dict = _to_dict
 
 
 class User(_ORM_BASE):
@@ -28,7 +36,8 @@ class Sender(_ORM_BASE):
 
 
 _DB_PATH = os.path.join(ROOT, 'E-mail Subscriptions System.sqlite3')
-_ENGINE = create_engine(f'sqlite:///{_DB_PATH}', poolclass=SingletonThreadPool, connect_args={'check_same_thread': False})
+_ENGINE = create_engine(f'sqlite:///{_DB_PATH}', poolclass=SingletonThreadPool,
+                        connect_args={'check_same_thread': False})
 _SESSION_CLZ = sessionmaker(bind=_ENGINE)
 
 # create table if not exist
@@ -53,5 +62,15 @@ def all_subscriber() -> List[str]:
         return [e.email for e in ret]
 
 
+def debug() -> str:
+    ret = {}
+    with session() as s:
+        user: List[User] = s.query(User).all()
+        ret['user'] = [e.dict() for e in user]
+        sender: List[Sender] = s.query(Sender).all()
+        ret['sender'] = [e.dict() for e in sender]
+    return json.dumps(ret)
+
+
 if __name__ == '__main__':
-    print(all_subscriber())
+    print(debug())

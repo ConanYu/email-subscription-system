@@ -248,6 +248,13 @@ def api_subscriber():
     abort(400)
 
 
+@APP.route('/api/debug', methods=['GET'])
+def api_debug():
+    if check_login() == GLOBAL_CONFIG.get('admin.email').lower():
+        return db.debug()
+    abort(400)
+
+
 @APP.route('/logout', methods=['GET'])
 def logout():
     resp = make_response('<script>window.location.replace("/");</script>')

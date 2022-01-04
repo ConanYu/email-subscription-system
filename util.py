@@ -27,3 +27,8 @@ def md5(v: Union[str, int]) -> str:
     o = hashlib.md5()
     o.update(v.encode('utf-8'))
     return o.hexdigest()
+
+
+if __name__ == '__main__':
+    server = smtplib.SMTP_SSL('smtp.163.com', 465)
+    print(server)
