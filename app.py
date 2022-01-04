@@ -111,15 +111,15 @@ def api_register(email: str, password: str):
         rand = random.randrange(0, s.query(db.Sender).count())
         sender = s.query(db.Sender)[rand]
     name = GLOBAL_CONFIG.get('project.name', 'Project Name')
-    host = GLOBAL_CONFIG.get('server.host', get_local_ip())
-    port = GLOBAL_CONFIG.get('server.port', 9853)
+    host = GLOBAL_CONFIG.get('verify.host', get_local_ip())
+    port = GLOBAL_CONFIG.get('verify.port', 9853)
     key = hashlib.sha1(f'{email}{time.time()}{random.random()}'.encode('utf-8')).hexdigest()
     REGISTER_CACHE.__setitem__(key, db.User(email=email, pwd=pwd_hash(password)))
     REGISTER_CACHE.__setitem__(email, '')
     mail = MIMEText('\r\n'.join([
         f'Hi {email},',
         f'Thanks for registering {name}. Please verify your email address by clicking the URL below.',
-        f'http://{host}:{port}/verify?key={key}'
+        f'{host}:{port}/verify?key={key}'
     ]), 'plain', 'utf-8')
     mail['Subject'] = f'[{name}] Please confirm your email address'
     send_email(sender, [email], mail)

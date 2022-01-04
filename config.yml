@@ -3,6 +3,10 @@ server:
   port: ~
   debug: true
 
+verify:
+  host: ~
+  port: ~
+
 app:
   register:
     cache:
@@ -16,5 +20,5 @@ project:
   name: GoodGuy
 
 admin:
-  email: ~
-  password: ~
+  email: ~ # require
+  password: ~ # require
