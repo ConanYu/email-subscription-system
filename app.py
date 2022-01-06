@@ -66,9 +66,9 @@ def pwd_hash(password: str) -> str:
     return hashlib.sha1(f'Password: {password}, Project: EMAIL-SUBSCRIPTION-SYSTEM'.encode('utf-8')).hexdigest()
 
 
-def set_login_status(email: str) -> Response:
+def set_login_status(email: str, html: str = 'success') -> Response:
     client_id = hashlib.sha1(f'{random.random()}{time.time()}{email}'.encode('utf-8')).hexdigest()
-    response = make_response('success')
+    response = make_response(html)
     response.set_cookie(COOKIE_KEY, client_id, expires=datetime.datetime.now() + datetime.timedelta(
         seconds=GLOBAL_CONFIG.get('app.cookie.expire', 86400)))
     APP_SESSION.__setitem__(client_id, AppSession(email=email, timestamp=time.time()))
@@ -89,16 +89,15 @@ def subscribe():
 @APP.route('/verify', methods=['GET'])
 def verify():
     key = request.args.get('key', '')
-    ok = True
     try:
         user = REGISTER_CACHE.__getitem__(key)
         REGISTER_CACHE.pop(key)
         with db.session() as s:
             s.add(user)
-        set_login_status(user.email)
+        return set_login_status(user.email, render_template('verify.jinja2', ok=True))
     except KeyError:
-        ok = False
-    return render_template('verify.jinja2', ok=ok)
+        pass
+    return render_template('verify.jinja2', ok=False)
 
 
 def api_register(email: str, password: str):
