@@ -16,8 +16,8 @@ from flask_limiter.util import get_remote_address
 from pydantic import BaseModel
 
 import db
-from config import GLOBAL_CONFIG
-from util import send_email, md5
+from subscribe.util.config import GLOBAL_CONFIG
+from subscribe.util.util import send_email, md5
 
 APP = Flask(__name__)
 LIMITER = Limiter(APP, key_func=get_remote_address)

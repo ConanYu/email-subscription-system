@@ -3,7 +3,7 @@ import yaml
 from copy import deepcopy
 from readerwriterlock.rwlock import RWLockFairD
 
-from const import ROOT
+from subscribe.util.const import ROOT
 
 
 class Config(object):
@@ -37,7 +37,7 @@ class Config(object):
             return deepcopy(ret)
 
 
-GLOBAL_CONFIG = Config(os.path.join(ROOT, 'config.yml'))
+GLOBAL_CONFIG = Config(os.path.join(ROOT, '../../config.yml'))
 
 if __name__ == '__main__':
     print(GLOBAL_CONFIG.get(''))

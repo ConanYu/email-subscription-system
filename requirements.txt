@@ -5,3 +5,4 @@ cachetools
 pydantic
 readerwriterlock
 PyYAML
+rsa

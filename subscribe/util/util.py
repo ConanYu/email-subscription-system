@@ -4,7 +4,7 @@ import smtplib
 from email.mime.text import MIMEText
 from typing import List, Union
 
-from db import Sender
+from subscribe.db import Sender
 
 
 def send_email(sender: Sender, to_addr: List[str], mail: MIMEText):

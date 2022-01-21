@@ -8,7 +8,7 @@ from sqlalchemy import String, Column, create_engine, Integer
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from sqlalchemy.pool import SingletonThreadPool
 
-from const import ROOT
+from subscribe.util.const import ROOT
 
 _ORM_BASE = declarative_base()
 
